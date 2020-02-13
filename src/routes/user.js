@@ -2,6 +2,28 @@ import { Router } from "express"
 import { argon2i } from "argon2-ffi"
 import crypto from "crypto-promise"
 import Sequelize from "sequelize"
+import jwt from "jsonwebtoken"
+import fs from "fs"
+
+const signingOptions = {
+  issuer: "alexpreiss",
+  subject: req.body.username,
+  audience: "http://alexpreiss.com",
+  expiresIn: "12h",
+  algorithm: "RS256",
+}
+
+const verifyOptions = {
+  issuer: "alexpreiss",
+  subject: req.body.username,
+  audience: "http://alexpreiss.com",
+  expiresIn: "12h",
+  algorithm: ["RS256"],
+}
+
+const privateKEY = fs.readFileSync("src/keys/private.key", "utf8")
+const publicKEY = fs.readFileSync("src/keys/public.key", "utf8")
+
 const router = Router()
 
 router.get("/", async (req, res) => {
@@ -44,6 +66,8 @@ router.post("/signin", async (req, res) => {
   if (!req.body.password || !req.body.username) {
     return res.status(400).send("Missing required fields")
   }
+
+  const token = jwt.sign({ data: payload }, privateKEY, signingOptions)
 
   try {
     // find user based on username
