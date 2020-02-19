@@ -2,27 +2,8 @@ import { Router } from "express"
 import { argon2i } from "argon2-ffi"
 import crypto from "crypto-promise"
 import Sequelize from "sequelize"
-import jwt from "jsonwebtoken"
-import fs from "fs"
 
-const signingOptions = {
-  issuer: "alexpreiss",
-  subject: req.body.username,
-  audience: "http://alexpreiss.com",
-  expiresIn: "12h",
-  algorithm: "RS256",
-}
-
-const verifyOptions = {
-  issuer: "alexpreiss",
-  subject: req.body.username,
-  audience: "http://alexpreiss.com",
-  expiresIn: "12h",
-  algorithm: ["RS256"],
-}
-
-const privateKEY = fs.readFileSync("src/keys/private.key", "utf8")
-const publicKEY = fs.readFileSync("src/keys/public.key", "utf8")
+import jwt from "../auth/jwt"
 
 const router = Router()
 
@@ -31,9 +12,24 @@ router.get("/", async (req, res) => {
   return res.send(users)
 })
 
-router.get("/:userId", async (req, res) => {
-  const user = await req.context.models.User.findByPk(req.params.userId)
-  return res.send(user)
+router.post("/fromToken", async (req, res) => {
+  const token = req.body.token
+
+  if (!token) {
+    return res.status(401).send("JWT Required")
+  }
+
+  const payload = jwt.verify(token)
+
+  if (!payload) return res.status(400).send("Invalid JWT")
+
+  const user = await req.context.models.User.findByPk(payload.id)
+
+  if (!user) {
+    return res.status(404).send("user not found")
+  } else {
+    return res.status(200).send({ username: user.username })
+  }
 })
 
 router.post("/signup", async (req, res, next) => {
@@ -67,15 +63,15 @@ router.post("/signin", async (req, res) => {
     return res.status(400).send("Missing required fields")
   }
 
-  const token = jwt.sign({ data: payload }, privateKEY, signingOptions)
-
   try {
     // find user based on username
     const user = await req.context.models.User.findByLogin(req.body.username)
 
+    const token = jwt.sign({ id: user.id, username: user.username })
+
     argon2i.hash(req.body.password, user.salt).then(hash => {
       if (hash === user.hash) {
-        return res.status(200).send({ id: user.id, username: user.username })
+        return res.status(200).json({ token, user })
       } else {
         return res.status(400).send({ error: "Incorrect password" })
       }
