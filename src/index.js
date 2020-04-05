@@ -8,7 +8,7 @@ import "dotenv/config"
 const app = express()
 const port = process.env.port
 
-const eraseDatabaseOnSync = true
+const eraseDatabaseOnSync = false
 
 sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
   app.listen(port, () => {
@@ -23,7 +23,6 @@ app.use(express.json())
 app.use(async (req, res, next) => {
   req.context = {
     models,
-    me: await models.User.findByLogin("alexpreiss"),
   }
   next()
 })

@@ -7,13 +7,11 @@ const user = (sequelize, DataTypes) => {
         msg: "username is already in use",
       },
     },
-    hash: {
-      type: DataTypes.STRING,
-    },
-    salt: {
-      type: DataTypes.BLOB,
-    },
+    hash: DataTypes.STRING,
+    salt: DataTypes.BLOB,
+    profilePicture: DataTypes.STRING,
   })
+
   User.associate = models => {
     User.hasMany(models.Post, { onDelete: "CASCADE" })
   }
