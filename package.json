@@ -7,7 +7,7 @@
     "@babel/core": "^7.8.3",
     "@babel/node": "^7.8.4",
     "argon2-ffi": "^1.1.2",
-    "aws-sdk": "^2.627.0",
+    "aws-sdk": "^2.814.0",
     "babel-eslint": "^10.0.3",
     "babel-node": "0.0.1-security",
     "cors": "^2.8.5",
